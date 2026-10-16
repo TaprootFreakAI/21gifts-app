@@ -1,0 +1,22 @@
+name: Goldens desktop-light (fork helper)
+on:
+  push:
+    branches: [3db53e39-goldens-desktop-light]
+jobs:
+  goldens:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Update desktop-light baselines
+        run: npx playwright test e2e/visual.spec.ts --project=desktop-light --update-snapshots=changed || true
+        env:
+          HOSTNAME: 0.0.0.0
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goldens-desktop-light
+          path: e2e/visual.spec.ts-snapshots/*-desktop-light-linux.png
