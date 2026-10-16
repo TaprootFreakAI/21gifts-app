@@ -1,0 +1,30 @@
+name: Goldens r2 (fork helper)
+on:
+  push:
+    branches: [3db53e39-goldens-r2]
+jobs:
+  goldens:
+    name: Goldens (${{ matrix.project }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [desktop-light, desktop-dark, mobile-light, mobile-dark]
+    container:
+      image: mcr.microsoft.com/playwright:v1.61.1-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Update baselines
+        run: npx playwright test e2e/visual.spec.ts --project=${{ matrix.project }} --update-snapshots=changed > update.log 2>&1 || true
+        env:
+          HOSTNAME: 0.0.0.0
+      - run: tail -40 update.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: goldens-${{ matrix.project }}
+          path: |
+            e2e/visual.spec.ts-snapshots/*-${{ matrix.project }}-linux.png
+            update.log
